@@ -1,5 +1,26 @@
 <works>
    <work>
+    <year>2019</year>
+    <title>Prevention of Architectural Anomalies in Product Line Design Optimization</title>
+    <author>Tiago Tadeu Madrigar</author>
+    <abstract>The use of search algorithms has been successfully explored in the optimization 
+       of Software Product Line Architecture (PLA) design in the seminal approach called 
+       Multi-Objective Approach for Product-Line Architecture Design (MOA4PLA). Such an approach 
+       produces a set of PLA design alternatives that improves the different optimized factors. 
+       In addition to the optimization of these factors, the PLA projects obtained should ideally be 
+       free of architectural anomalies. An architectural anomaly can negatively impact both the 
+       variability and extensibility of PLA and other non-functional attributes. However, search-based 
+       approaches, such as MOA4PLA, adversely introduce architectural anomalies into the automatically 
+       generated solutions. Therefore, in the present work, we present the OPLA-Tool-ASP tool, which 
+       implements guidelines to prevent the Unused Interface, Unused Brick and Concern Overload anomalies 
+       in the context of MOA4PLA. In addition, we investigated the prevention of Link Overload anomaly. 
+       A study involving two experiments was conducted in order to analyze the efficiency of these guidelines. 
+       The results of this study show that the prevention of the studied architectural anomalies is feasible 
+       and that there are points of improvement in relation to the Link Overload anomaly prevention guideline.</abstract>
+    <paperlink>http://cibse2020.ppgia.pucpr.br/images/artigos/5/S05_P1.pdf</paperlink>
+    <experimentalpackagelink>https://github.com/otimizes/experimental-package-asp</experimentalpackagelink>
+  </work>
+   <work>
     <year>2020</year>
     <title>Architectural Feature Re-Modularization for Software Product Line Evolution</title>
     <author>Luciane Baldo Nicolodi</author>
@@ -28,6 +49,7 @@ practitioners, in order to support the evolution of SPLs.</abstract>
     <year>2020</year>
     <title>OPLA-Tool v2.0: a Tool for Product Line Architecture Design Optimization</title>
     <author>Willian Marques Freire</author>
+    <photo>https://lh6.googleusercontent.com/g_B2ljx1CGJvAQ96D-L1LAUplixJCSZWd3VEZfNIia2Q-rD39ZGqVH7YVwE1rMJELD_8vbv4hj8feSlE42A=w1848-h981-rw</photo>
     <git>http://github.com/wmfsystem</git>
     <abstract>The Multi-objective Optimization Approach for Product Line Architecture Design (MOA4PLA) 
       is the seminal approach that successfully optimizes Product Line Architecture (PLA) design using 
@@ -64,6 +86,7 @@ practitioners, in order to support the evolution of SPLs.</abstract>
     <year>2019</year>
     <title>Supporting decision makers in search-based product line architecture design using clustering</title>
     <author>Willian Marques Freire</author>
+    <photo>https://lh6.googleusercontent.com/g_B2ljx1CGJvAQ96D-L1LAUplixJCSZWd3VEZfNIia2Q-rD39ZGqVH7YVwE1rMJELD_8vbv4hj8feSlE42A=w1848-h981-rw</photo>
     <git>http://github.com/wmfsystem</git>
     <abstract>The Product Line Architecture (PLA) is one of the most important artifacts of a Software Product Line (SPL). 
     PLA design can be formulated as an optimization problem with many factors. In this context, the MOA4PLA approach was 
@@ -133,7 +156,7 @@ study pointed out that the solutions obtained with AM, in the context of MOA4PLA
 good from the software architects point of view. The AM still needs to be refined with
 improvements identified during the steps of this work.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/1mXSaIOw_-rbI5rneNzGXQ6T2J0QRoBZ-/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1y0RdTVWh9nH9n0YzjYPg84k8olO1ZyC1/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -166,7 +189,7 @@ proposal of the quality model for SBPD, the use of metrics for LPS oriented to s
 applied for the first time in the context of SBPD; and the new objective functions that
 let evaluate other architectural properties in the evaluation model of MOA4PLA.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/1EaEyYP_4zGtjlCIxkaYUNumd-i0qsTSX/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1l4M7Gnr0YZaarUbquebR_b0AAC2lBCch/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -220,7 +243,7 @@ that most of the functions are negatively correlated, so that when one function 
 the other decreases. Thus the function has to be selected as an objective, if the architect
 wants to prioritize it in the optimization process.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/12Sro7Q62uCfHzGWGMSjgV6jmp0yTe7KW/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/16mdgNKEfw36Q41HU6GJ30ItR0JaeRZc8/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -249,7 +272,7 @@ values of the software metrics. A greater diversity of solutions was obtained, t
 architect can choose which one best fits his/her objectives. Therefore, the application of
 design patterns using the proposed operator contributes positively to the PLA design.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/1t1ql6Aa15rWrpO0UHT3yMPf65riw-IGu/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1Y9C9mdg1lwOhoNM0viW9HzWg9JqhE_ot/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -275,7 +298,7 @@ more productive. The implementation and integration of such modules were evaluat
 using real PLAs. The obtained results show the usefulness of OPLA-Tool, which contri-
 butes to reduce the effort spent in the PLA design and improvement.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/1480r6ryCMJQwVl65ceMwQlW4x1Q9hLdY/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1UIOdnHswYn86Z0Kw3VgJiD_bL_j73MxF/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -298,7 +321,7 @@ they were resolved by experiments and analyzes in PLAs generated. These solution
 as expected, the class and interfaces isolates issue, which also cause isolated package still
 exists. In addition, other problems were identified in OPLA-Tool.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/11RnhXNDROTQL41BCyHeTB1bULH5yjAPP/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1tS7NCLGVqxIWMwpizJ7v2iUAEAAa2VL4/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -325,7 +348,7 @@ rithms were executed, with evaluation models of two, three and five objectives. 
 that, within the context of this work, NSGA-III created a solution set of better quality than the
 NSGA-II. Future study cases for improving the OPLA-Tool were also noted.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/17Kk4_-mM2GmgNW9_gnWtNriJZwjrSexs/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1j3pK7KcvdONeyh8UvvJF5j8-rT3hJA6k/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -350,7 +373,7 @@ the feedback of the specialists allowed to identify that, as PLAs obtained are c
 the objectives that were optimized and that the architectural characteristics that the experts are
 judgments are just like that were evaluated in this study.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/1bU-F98SAHCDykGyqDHbpOkZgAkGEH9TV/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1wzjnsmMNF08DapFakR9kSshKvMUPLHFl/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -373,7 +396,7 @@ verify the influence of OPLA-Tool on the types of anomalies present in the gener
 solutions, in contrast to the types of anomalies previously existing in the original solutions.
 Finally, guidelines were proposed to detect and remove the types of anomalies found.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/1mbQTfDcTOmahFk_QLu9kstd-snwJJce-/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1FPfGUknBxRbNKEPyHqCfN7F6_yD5r8h_/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -399,7 +422,7 @@ this experiment. From the accomplishment of such activities, it was possible to 
 tool was accepted by these participants, being possible to analyze some of its positive and
 negative points.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/1QOKaR_g9Sb0ZToqae8gadQlF5XIlawM5/view?usp=sharing/paperlink></paperlink>
+    <paperlink>https://drive.google.com/file/d/1MzEg04QWnfCJHMSlASgQsVZO-u25qhYU/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -419,7 +442,7 @@ questionnaire, which is in Annex A, some usability problems were found in the
 tool interface. For these cases, prototypes were made with the proposed
 improvements to the OPLA - Tool.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/16vaGo4C2-cWRy0RYxKz_JZ5b9vUxefP8/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1WDPzLgx_sr9Fz6DVCAmu1IxS_xPchQSC/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -445,7 +468,7 @@ time spent to compile OPLA-tool. After its implementation, an experiment was
 conducted using one PLA and prioritizing some features. The results showed
 improvement in modularization of prioritized features.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/10mlTJEgkti4SOQHNd0luW-2rA7CpMhNy/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1116TnpxBeS9_qRIBnIRnpB6u12RtWDj9/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
   </work> 
   <work>
@@ -465,7 +488,55 @@ configuration management model that meets the environment of research groups, ad
 roles and simplifying tasks so that software development within these groups occurs in the
 most orderly way possible.
     </abstract>
-    <paperlink>https://drive.google.com/file/d/1a5c__vYoIho1KK-3TiL_v4b34pPVtWv5/view?usp=sharing</paperlink>
+    <paperlink>https://drive.google.com/file/d/1UcoWo8Pfv5hiefsCURHtZvThfdf77Q1i/view?usp=sharing</paperlink>
     <experimentalpackagelink></experimentalpackagelink>
+  </work> 
+   <work>
+    <year>2015</year>
+    <title>Prioritizing features to be modularized in product line architecture</title>
+    <author>Diego Fernandes da Silva</author>
+    <abstract>
+    One of main Software Product Line's (SPL) artifacts, which is an approach for the
+development of software applications in large scale, is the Product-Line Architecture
+(PLA). The MOA4PLA approach includes one searching operator for improving PLA
+projects in relation to features modularization through small modifications in a PLA
+project. However, this searching operator of the related approach do not prioritize
+features to be modularized. Thereby, all the features are modularized with the same
+ratio of probability. However, it is customary hold a list of the prioritized features
+involved in the SPL's products that will be derived or evolved. These features should
+have modularization's priority. In this context, this paper aims to perform necessary
+modifications in the OPLA-Tool, in which automates the application of the MOA4PLA
+approach, in order to allow the SPL features prioritization. Two methods to prioritize
+modularization's features are proposed: One in which the user select a order of features
+to be prioritized and another in which the features are prioritized automatically
+according to the feature's type. Only the first method was implemented due to the long
+time spent to compile OPLA-tool. After its implementation, an experiment was
+conducted using one PLA and prioritizing some features. The results showed
+improvement in modularization of prioritized features.
+    </abstract>
+    <paperlink>https://drive.google.com/file/d/1116TnpxBeS9_qRIBnIRnpB6u12RtWDj9/view?usp=sharing</paperlink>
+    <experimentalpackagelink></experimentalpackagelink>
+  </work> 
+  <work>
+    <year>2017</year>
+    <title>Qualitative Analysis of Software Product Line Architecture optimized from the OPLA-Tool</title>
+    <author>Thiago de Oliveira Lavezzo</author>
+    <abstract>
+    Software Product Line (LPS) is a collection of systems that share characteristics in a managed way through 
+       its various artifacts. It aims to increase software reuse, decrease production time and product development 
+       costs. In this approach, the main artifact is the LPS architecture (PLA - Product Line Architecture). 
+       Architectural metrics support architects to define and improve a PLA so that it is cohesive, modular and 
+       reusable. However, this task can involve several factors, which can often conflict with each other. 
+       When this occurs, architects must choose which ones to prioritize, this is not a simple task and requires 
+       great human effort, as there is not always an optimal and exact solution. In this context, Colanzi (2014)
+       introduced the MOA4PLA (Multi-Objective Approach for Product-Line Architecture) approach that aims to optimize 
+       PLAs. To allow the automation of the MOA4PLA approach, Colanzi (2014) proposed a tool called OPLA-Tool 
+       (Optimization for PLA Tool). This work consisted of a qualitative analysis of PLAs optimized from the OPLA-Tool. 
+       The results were obtained from the analysis of these PLAs by specialists in the area of Software Engineering. 
+       The results obtained from the qualitative analysis based on the experts' feedback, showed positive and negative 
+       points of the optimized PLAs, being that in general they were consistent with what was optimized in the project.
+    </abstract>
+    <paperlink>https://drive.google.com/file/d/18VvybfXxo-Me3suWHFLFSGmE3qp8zCGB/view?usp=sharing</paperlink>
+    <experimentalpackagelink>https://github.com/otimizes/experimental-package-quali-optimized-pla</experimentalpackagelink>
   </work> 
 </works>
