@@ -591,6 +591,8 @@ public class OPLASolutionSet {
 
         SaveStringToFile.getInstance().createLogDir();
         String logPath = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs" + FileConstants.FILE_SEPARATOR + "link_fitness.txt";
+        String logPathThreashold = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs" + FileConstants.FILE_SEPARATOR + "threashold" + FileConstants.FILE_SEPARATOR;
+
 
         if (logger != null)
             logger.putLog("Number of solutions: " + solutionSet.solutionsList_.size(), Level.INFO);
@@ -601,11 +603,29 @@ public class OPLASolutionSet {
                 String originalName = ((OPLA) solutionSet.solutionsList_.get(i).getProblem()).getArchitecture_().getName();
                 funResults.get(i).setName(pathToSave + originalName);
                 if (generate) {
+
+                    logPathThreashold += originalName;
+                    logPathThreashold += "-";
+                    logPathThreashold += funResults.get(i).getId();
+
+                    saveThreasholdSolution(arch, logPathThreashold);
+
                     arch.save(arch, pathToSave, "-" + funResults.get(i).getId());
                     SaveStringToFile.getInstance().appendStrToFile(logPath, "\n" + pathToSave + arch.getName() + funResults.get(i).getId() + "\t" + solutionSet.solutionsList_.get(i).toString());
                 }
             }
         }
+    }
+
+    public void saveThreasholdSolution(Architecture architecture, String logPathThreashold){
+        SaveStringToFile.getInstance().createThreashholdLogDir();
+        String pathCO = logPathThreashold + "-CO.txt";
+        architecture.saveThreasholdConcernOverload(pathCO);
+        String pathLC = logPathThreashold + "-LC.txt";
+        architecture.saveThreshold_lc(pathLC);
+        String pathLO = logPathThreashold + "-LO.txt";
+        architecture.saveThreasholdLinkOverload(pathLO);
+
     }
 
     public void saveVariablesToFile(String path) {

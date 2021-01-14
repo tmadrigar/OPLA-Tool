@@ -4,6 +4,7 @@ import br.otimizes.oplatool.architecture.smarty.util.SaveStringToFile;
 import br.otimizes.oplatool.common.exceptions.JMException;
 import br.otimizes.oplatool.core.jmetal4.core.Algorithm;
 import br.otimizes.oplatool.core.jmetal4.core.OPLASolutionSet;
+import br.otimizes.oplatool.core.jmetal4.core.Solution;
 import br.otimizes.oplatool.core.jmetal4.core.SolutionSet;
 import br.otimizes.oplatool.core.jmetal4.database.Result;
 import br.otimizes.oplatool.core.jmetal4.experiments.CommonOPLAFeatMut;
@@ -122,6 +123,15 @@ public class NSGAIIAPSOPLABase implements AlgorithmBase<NSGAIIConfigs> {
 
                 resultFront = problem.removeDominadas(resultFront);
                 resultFront = problem.removeRepetidas(resultFront);
+                // Tiago
+                // Para cada solução de runs
+                // após já verificar a fronteira de pareto
+                // Antes de salvar os resultados tem que arrumar o fitness para pegar o fitness original sem a penalidade
+                // o resultFront contém as melhores soluções da run
+
+                for(Solution s : resultFront.getSolutionSet()){
+                    problem.evaluate(s);
+                }
 
                 execution = mp.save(execution);
                 List<Info> infos = result.getInfos(resultFront.getSolutionSet(), execution, experiment);
@@ -137,18 +147,36 @@ public class NSGAIIAPSOPLABase implements AlgorithmBase<NSGAIIConfigs> {
                 OPLABaseUtils.saveHypervolume(experiment.getId(), execution.getId(), resultFront, plaName);
             }
 
+            // Tiago
+            // todas as runs tem as melhores soluções de todas as rodadas, antes de aplicar a fronteira de pareto
+            // tem que utilizar o fitness com penalidade
+
+            for(Solution s : allRuns.getSolutionSet()){
+                problem.evaluateLinkOverload(s);
+            }
+
             allRuns = problem.removeDominadas(allRuns);
             allRuns = problem.removeRepetidas(allRuns);
+
+            // Tiago
+            // após já verificar a fronteira de pareto
+            // Antes de salvar os resultados tem que arrumar o fitness para pegar o fitness original sem a penalidade
+
+            for(Solution s : allRuns.getSolutionSet()){
+                problem.evaluate(s);
+            }
 
             configs.getLogger().putLog("------ All Runs - Non-dominated solutions --------", Level.INFO);
             List<Info> funResults = result.getInfos(allRuns.getSolutionSet(), experiment);
 
-            if (configs.getNumberOfRuns() > 1) {
-                new OPLASolutionSet(allRuns).saveVariablesToFile("VAR_All_", funResults, configs.getLogger(), true);
-            }
+
 
             List<Info> infos = result.getInfos(allRuns.getSolutionSet(), null, experiment);
             mp.save(infos);
+            if (configs.getNumberOfRuns() > 1) {
+                new OPLASolutionSet(allRuns).saveVariablesToFile("VAR_All_", infos, configs.getLogger(), true);
+            }
+
             Map<String, List<ObjectiveFunctionDomain>> allMetrics = result.getMetrics(funResults, allRuns.getSolutionSet(), null, experiment,
                     selectedObjectiveFunctions);
             mp.save(allMetrics);

@@ -1214,7 +1214,8 @@ public class Architecture extends Variable {
         return linkOverload;   //retorno da funcao //retorna a lista com 3 posições
     }
 
-    public ArrayList<Integer> getTHZLinkOverload() {         //calculo do thz
+
+    public ArrayList<Integer> getThreasholdLinkOverload() {         //calculo do thz
         ArrayList<Integer> linkOverload = new ArrayList<>();
         ArrayList<Integer> inputLink = new ArrayList<>(); // pega lista de entrada
         ArrayList<Integer> inputOut = new ArrayList<>();
@@ -1237,15 +1238,15 @@ public class Architecture extends Variable {
             bothLink.add(listAux.get(2));
         }
 
-        linkOverload.add(getThz(inputLink)); //calcula o thz de cada uma
-        linkOverload.add(getThz(inputOut));
-        linkOverload.add(getThz(bothLink));
+        linkOverload.add(getThreashold(inputLink)); //calcula o thz de cada uma
+        linkOverload.add(getThreashold(inputOut));
+        linkOverload.add(getThreashold(bothLink));
 
         return linkOverload; //retorna o thz das 3 listas
     }
 
 
-    public int getThz(ArrayList<Integer> list) { //calculo que ja javia sido realisado para o concern overload
+    public int getThreashold(ArrayList<Integer> list) { //calculo que ja javia sido realisado para o concern overload
         Double mean = 0.0;
         for (Integer n : list) {
             mean += n;
@@ -1260,21 +1261,21 @@ public class Architecture extends Variable {
         return (int) Math.ceil(THzb);
     }
 
-    public void linkOverloadExists(ArrayList<Integer> thrz) { //verificar se existe linkoverload (anomalia)
+    public void linkOverloadExists(ArrayList<Integer> threshold) { //verificar se existe linkoverload (anomalia)
         ArrayList<Element> DectecLink = new ArrayList();
         ArrayList<Integer> listAux = new ArrayList<>();
         for (Class class_ : this.getAllClasses()) { // classe
             listAux = getLinkOverload(class_); //verifica o link da classe
 
-            if (listAux.get(0) > thrz.get(0)) { // compara com o thz calculado anterionmente
+            if (listAux.get(0) > threshold.get(0)) { // compara com o thz calculado anterionmente
                 DectecLink.add(class_);
                 continue;
             }
-            if (listAux.get(1) > thrz.get(1)) { //se for maior, tem anomalia // se for igual ainda é aceitavel
+            if (listAux.get(1) > threshold.get(1)) { //se for maior, tem anomalia // se for igual ainda é aceitavel
                 DectecLink.add(class_);
                 continue;
             }
-            if (listAux.get(2) > thrz.get(2)) {
+            if (listAux.get(2) > threshold.get(2)) {
                 DectecLink.add(class_);
                 continue;
             }
@@ -1283,15 +1284,15 @@ public class Architecture extends Variable {
         for (Interface interface_ : this.getAllInterfaces()) { // verifica link na internface
             listAux = getLinkOverload(interface_);
 
-            if (listAux.get(0) > thrz.get(0)) { // compara com o thz calculado anterionmente
+            if (listAux.get(0) > threshold.get(0)) { // compara com o thz calculado anterionmente
                 DectecLink.add(interface_);
                 continue;
             }
-            if (listAux.get(1) > thrz.get(1)) {
+            if (listAux.get(1) > threshold.get(1)) {
                 DectecLink.add(interface_);
                 continue;
             }
-            if (listAux.get(2) > thrz.get(2)) {
+            if (listAux.get(2) > threshold.get(2)) {
                 DectecLink.add(interface_);
                 continue;
             }
@@ -1302,10 +1303,10 @@ public class Architecture extends Variable {
         DectecLink.clear();
         listAux.clear();
 
-        linkOverloadExcedTHZ(thrz); // contar o total de relacionamentos que excede o thrz
+        linkOverloadExcedThreshold(threshold); // contar o total de relacionamentos que excede o thrz
     }
 
-    public void linkOverloadExcedTHZ(ArrayList<Integer> thrz) { //contagem excesso além do thz
+    public void linkOverloadExcedThreshold(ArrayList<Integer> thrz) { //contagem excesso além do thz
         exceedLink = 0;
         ArrayList<Integer> listAux = new ArrayList<>();
         for (Class class_ : this.getAllClasses()) { // classe
@@ -1353,4 +1354,71 @@ public class Architecture extends Variable {
     public void setExceedLink(int exceedLink) {
         this.exceedLink = exceedLink;
     }
+
+
+    // save concer overload
+    public void saveThreasholdConcernOverload(String pathToSave) {
+
+        String data = "";
+
+        final List<Package> allPackage = new ArrayList<Package>(this.getAllPackages());
+        if (!allPackage.isEmpty()) {
+
+            for (Package selectedPackage : allPackage) { // para cada pacote da solução
+
+                List<Class> lstClass = new ArrayList<>(selectedPackage.getAllClasses());
+                for (Class selectedClass : lstClass) { // para cada classe
+
+                    data = "\n" + selectedClass.getName()+"\t"+selectedClass.getPriConcerns().size();
+                    SaveStringToFile.getInstance().appendStrToFile(pathToSave, data);
+
+                }
+
+                // verificar todas as interfaces do pacote
+                List<Interface> lstInterface = new ArrayList<>(selectedPackage.getAllInterfaces());
+
+                for (Interface selectedInterface : lstInterface) {
+                    data = "\n" + selectedInterface.getName()+"\t"+selectedInterface.getAllConcerns().size();
+                    SaveStringToFile.getInstance().appendStrToFile(pathToSave, data);
+
+                }
+            }
+
+        }
+
+    }
+
+    //save threashold large class
+    public void saveThreshold_lc(String pathToSave) {
+
+        String data = "";
+        // para cada classe contAtribMeth da arquitetura, contar a quantidade de metodos e atributos e adicionar a soma na lista lstAtriMeth
+        for (Class contAtribMeth : this.getAllClasses()) {
+            data = "\n" +contAtribMeth.getName()+"\t"+ (contAtribMeth.getAllMethods().size() + contAtribMeth.getAllAttributes().size());
+            SaveStringToFile.getInstance().appendStrToFile(pathToSave, data);
+        }
+
+    }
+
+    // save link overload
+    public void saveThreasholdLinkOverload(String pathToSave) {         //calculo do thz
+        String data = "";
+
+        ArrayList<Integer> listAux = new ArrayList<>(); // armazenar o linkoverload de cada elemento (classe, interface)
+        for (Class clazz : this.getAllClasses()) { // cpra cada lasse existente
+
+            listAux = getLinkOverload(clazz); //calculando o link overload da classe
+            data = "\n" + clazz.getName() + "\t" + listAux.get(0) + "\t" + listAux.get(1) + "\t" + listAux.get(2);
+            SaveStringToFile.getInstance().appendStrToFile(pathToSave, data);
+        }
+        for (Interface interface_ : this.getAllInterfaces()) {
+            listAux = getLinkOverload(interface_); //calculando o link overload da interface
+            data = "\n" + interface_.getName() + "\t" + listAux.get(0) + "\t" + listAux.get(1) + "\t" + listAux.get(2);
+            SaveStringToFile.getInstance().appendStrToFile(pathToSave, data);
+        }
+
+    }
+
+
+
 }

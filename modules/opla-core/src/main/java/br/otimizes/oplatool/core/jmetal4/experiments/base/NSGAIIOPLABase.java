@@ -143,12 +143,13 @@ public class NSGAIIOPLABase implements AlgorithmBase<NSGAIIConfigs> {
             configs.getLogger().putLog("------ All Runs - Non-dominated solutions --------", Level.INFO);
             List<Info> funResults = result.getInfos(allRuns.getSolutionSet(), experiment);
 
-            if (configs.getNumberOfRuns() > 1) {
-                new OPLASolutionSet(allRuns).saveVariablesToFile("VAR_All_", funResults, configs.getLogger(), true);
-            }
+
 
             List<Info> infos = result.getInfos(allRuns.getSolutionSet(), null, experiment);
             mp.save(infos);
+            if (configs.getNumberOfRuns() > 1) {
+                new OPLASolutionSet(allRuns).saveVariablesToFile("VAR_All_", infos, configs.getLogger(), true);
+            }
             Map<String, List<ObjectiveFunctionDomain>> allMetrics = result.getMetrics(funResults, allRuns.getSolutionSet(), null, experiment,
                     selectedObjectiveFunctions);
             mp.save(allMetrics);

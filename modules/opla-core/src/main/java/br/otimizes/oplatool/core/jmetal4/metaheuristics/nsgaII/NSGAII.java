@@ -24,6 +24,7 @@ package br.otimizes.oplatool.core.jmetal4.metaheuristics.nsgaII;
 import br.otimizes.oplatool.architecture.representation.Architecture;
 import br.otimizes.oplatool.architecture.representation.Class;
 import br.otimizes.oplatool.architecture.representation.Interface;
+import br.otimizes.oplatool.architecture.representation.Package;
 import br.otimizes.oplatool.core.jmetal4.core.*;
 import br.otimizes.oplatool.architecture.io.OPLALogs;
 import br.otimizes.oplatool.architecture.io.OptimizationInfo;
@@ -131,6 +132,14 @@ public class NSGAII extends Algorithm {
             problem_.evaluate(solution_base);
             saveBaseHypervolume(solution_base);
             originalArchElementCount = CountArchElements(solution_base);
+
+            int co = detectThreshold(solution_base);
+            int lc = detectThreshold_lc(solution_base);
+            ArrayList<Integer> linkOverloadThrz = ((Architecture) solution_base.getDecisionVariables()[0]).getThreasholdLinkOverload(); // calcule o threashold
+            saveBaseThreashold(co, lc , linkOverloadThrz);
+
+            saveOriginalThreashold((Architecture)solution_base.getDecisionVariables()[0]);
+
         } catch (Exception e) {
             e.printStackTrace();
             throw new JMException(e.getMessage());
@@ -315,6 +324,29 @@ public class NSGAII extends Algorithm {
         }
     }
 
+
+    private void saveBaseThreashold(int co, int lc, ArrayList<Integer> linkOverloadThrz) {
+        SaveStringToFile.getInstance().createThreashholdLogDir();
+        String path = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs"  + FileConstants.FILE_SEPARATOR + "threashold" + FileConstants.FILE_SEPARATOR + "0_base_threashold.txt";
+        SaveStringToFile.getInstance().appendStrToFile(path,"CO:");
+        SaveStringToFile.getInstance().appendStrToFile(path,""+co);
+        SaveStringToFile.getInstance().appendStrToFile(path,"\nLc:");
+        SaveStringToFile.getInstance().appendStrToFile(path,""+lc);
+        SaveStringToFile.getInstance().appendStrToFile(path,"\nLO:");
+        SaveStringToFile.getInstance().appendStrToFile(path,""+linkOverloadThrz.toString());
+    }
+
+    private void saveOriginalThreashold(Architecture architecture) {
+        SaveStringToFile.getInstance().createThreashholdLogDir();
+        String pathCO = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs"  + FileConstants.FILE_SEPARATOR + "threashold" + FileConstants.FILE_SEPARATOR + "0_OriginalCO.txt";
+        String pathLC = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs"  + FileConstants.FILE_SEPARATOR + "threashold" + FileConstants.FILE_SEPARATOR + "0_OriginalLC.txt";
+        String pathLO = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs"  + FileConstants.FILE_SEPARATOR + "threashold" + FileConstants.FILE_SEPARATOR + "0_OriginalLO.txt";
+        architecture.saveThreasholdConcernOverload(pathCO);
+        architecture.saveThreshold_lc(pathLC);
+        architecture.saveThreasholdLinkOverload(pathLO);
+    }
+
+
     public Solution[] selectionComplementary(SolutionSet pop){
 
         ArrayList<ArrayList<Solution>> lstFitness = new ArrayList<>();
@@ -476,4 +508,128 @@ public class NSGAII extends Algorithm {
         }
         return  true;
     }
+
+    public int detectThreshold(Solution solution) throws JMException {
+
+        ArrayList<Integer> lstConcernCount = new ArrayList<>();
+
+        final Architecture arch = ((Architecture) solution.getDecisionVariables()[0]); // solução original
+
+        // Lista de todos os pacotes
+        final List<Package> allPackage = new ArrayList<Package>(arch.getAllPackages());
+        if (!allPackage.isEmpty()) {
+
+            for (Package selectedPackage : allPackage) { // para cada pacote da solução
+
+
+                // verificar todas as classes do pacote
+                List<Class> lstClass = new ArrayList<>(selectedPackage.getAllClasses());
+
+                for (Class selectedClass : lstClass) { // para cada classe
+
+                    // conta a quantidade de caracteristicas da classe e salva em lista
+                    //lstConcernCount.add(selectedClass.getOwnConcerns().size());
+                    lstConcernCount.add(selectedClass.getPriConcerns().size());
+
+                    System.out.println("classe: " + selectedClass.getName() + " " + selectedClass.getPriConcerns().size());
+
+                }
+
+                // verificar todas as interfaces do pacote
+                List<Interface> lstInterface = new ArrayList<>(selectedPackage.getAllInterfaces());
+
+                for (Interface selectedInterface : lstInterface) {
+                    lstConcernCount.add(selectedInterface.getAllConcerns().size());
+                    //System.out.println("interface"+selectedInterface.getAllConcerns().size());
+                    System.out.println("interface: " + selectedInterface.getName() + " " + selectedInterface.getAllConcerns().size());
+
+                }
+            }
+
+        }
+
+        Double meanBrickConcerns = 0.0;
+        for (Integer n : lstConcernCount) {
+            meanBrickConcerns += n;
+            //System.out.println(n);
+        }
+        meanBrickConcerns = meanBrickConcerns / lstConcernCount.size();
+        System.out.println(("media") + meanBrickConcerns);
+
+
+        // calculo do desvio padrao
+        Double stdDevOfBrickConcerns = getDesvioPadrao(lstConcernCount);
+        System.out.println(("desvio padrão" + stdDevOfBrickConcerns));
+
+        // media + desvio padrão
+        Double THzb = meanBrickConcerns + stdDevOfBrickConcerns;
+        // arredondar THzb para cima e retornar
+        System.out.println("soma:" + THzb);
+        return (int) Math.ceil(THzb);
+
+    }
+
+
+    public int detectThreshold_lc(Solution solution) throws JMException {
+
+        // quantidade de atributos + metodos de cada classe da solução
+        ArrayList<Integer> lstAtribMeth = new ArrayList<>();
+
+        final Architecture arch = ((Architecture) solution.getDecisionVariables()[0]); // solução original
+
+        // para cada classe contAtribMeth da arquitetura, contar a quantidade de metodos e atributos e adicionar a soma na lista lstAtriMeth
+        for (Class contAtribMeth : arch.getAllClasses()) {
+            lstAtribMeth.add(contAtribMeth.getAllMethods().size() + contAtribMeth.getAllAttributes().size());
+
+        }
+        Double meanBrickConcerns = 0.0;
+        for (Integer n : lstAtribMeth) {
+            meanBrickConcerns += n;
+            //System.out.println(n);
+        }
+        meanBrickConcerns = meanBrickConcerns / lstAtribMeth.size();
+        System.out.println(("media") + meanBrickConcerns);
+
+
+        // calculo do desvio padrao
+        Double stdDevOfBrickConcerns = getDesvioPadrao(lstAtribMeth);
+        System.out.println(("desvio padrão" + stdDevOfBrickConcerns));
+
+        // media + desvio padrão
+        Double THzb = meanBrickConcerns + stdDevOfBrickConcerns;
+        // arredondar THzb para cima e retornar
+        System.out.println("THZ para Large Class Atributos + Métodos:" + THzb);
+        return (int) Math.ceil(THzb);
+
+    }
+
+
+    public strictfp Double getMedia(ArrayList<Integer> valor) {
+        try {
+            return getSum(valor) / valor.size();
+        } catch (NullPointerException e) {
+            throw new IllegalArgumentException("The list has null values");
+        }
+    }
+
+    public strictfp Double getSum(List<Integer> valor) {
+        Double soma = 0D;
+        for (int i = 0; i < valor.size(); i++) {
+            soma += valor.get(i);
+        }
+        return soma;
+    }
+
+    public strictfp Double getDesvioPadrao(ArrayList<Integer> valor) {
+        Double media = getMedia(valor);
+        int tam = valor.size();
+        Double desvPadrao = 0D;
+        for (Integer vlr : valor) {
+            Double aux = vlr - media;
+            desvPadrao += aux * aux;
+        }
+        return Math.sqrt(desvPadrao / (tam - 1));
+    }
+
+
 }

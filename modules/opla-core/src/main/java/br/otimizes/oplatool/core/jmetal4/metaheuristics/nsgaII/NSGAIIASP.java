@@ -25,19 +25,38 @@ import br.otimizes.oplatool.architecture.representation.Architecture;
 import br.otimizes.oplatool.architecture.representation.Class;
 import br.otimizes.oplatool.architecture.representation.Interface;
 import br.otimizes.oplatool.architecture.representation.Package;
-import br.otimizes.oplatool.common.exceptions.JMException;
 import br.otimizes.oplatool.core.jmetal4.core.*;
-import br.otimizes.oplatool.core.jmetal4.metrics.Metrics;
-import br.otimizes.oplatool.core.jmetal4.operators.mutation.PLAMutationOperator;
-import br.otimizes.oplatool.core.jmetal4.problems.OPLA;
+import br.otimizes.oplatool.architecture.io.OPLALogs;
+import br.otimizes.oplatool.architecture.io.OptimizationInfo;
+import br.otimizes.oplatool.architecture.io.OptimizationInfoStatus;
+import br.otimizes.oplatool.core.jmetal4.operators.CrossoverOperators;
+import br.otimizes.oplatool.core.jmetal4.operators.crossover.PLACrossoverOperator;
+import br.otimizes.oplatool.domain.config.ApplicationFileConfigThreadScope;
+import br.otimizes.oplatool.architecture.smarty.util.SaveStringToFile;
+import br.otimizes.oplatool.common.exceptions.JMException;
+import br.otimizes.oplatool.core.jmetal4.interactive.InteractiveFunction;
 import br.otimizes.oplatool.core.jmetal4.qualityIndicator.QualityIndicator;
 import br.otimizes.oplatool.core.jmetal4.util.Distance;
 import br.otimizes.oplatool.core.jmetal4.util.Ranking;
 import br.otimizes.oplatool.core.jmetal4.util.comparators.CrowdingComparator;
+import br.otimizes.oplatool.core.learning.ClassifierAlgorithm;
+import br.otimizes.oplatool.core.learning.SubjectiveAnalyzeAlgorithm;
+import br.otimizes.oplatool.domain.OPLAThreadScope;
+import br.otimizes.oplatool.domain.config.FileConstants;
+import com.rits.cloning.Cloner;
 import org.apache.log4j.Logger;
 
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
+
+import br.otimizes.oplatool.core.jmetal4.operators.mutation.PLAMutationOperator;
+import br.otimizes.oplatool.core.jmetal4.problems.OPLA;
+import br.otimizes.oplatool.core.jmetal4.metrics.Metrics;
 
 /**
  * This class implements the NSGA-II algorithm.
@@ -63,120 +82,163 @@ public class NSGAIIASP extends Algorithm {
      * @throws JMException
      * @throws Exception
      */
+
     public SolutionSet execute() throws JMException {
         LOGGER.info("Iniciando Execução");
         int populationSize;
         int maxEvaluations;
         int evaluations;
-        QualityIndicator indicators; // QualityIndicator object
-        int requiredEvaluations; // Use in the example of use of the
-        // indicators object (see below)
+
+        QualityIndicator indicators;
+        int requiredEvaluations;
+
         SolutionSet population;
         SolutionSet offspringPopulation;
         SolutionSet union;
-        PLAMutationOperator mutationOperator;
+
+        Operator mutationOperator;
         Operator crossoverOperator;
         Operator selectionOperator;
+
         Distance distance = new Distance();
-        // Read the parameters
-        populationSize = ((Integer) getInputParameter("populationSize")).intValue();
-        maxEvaluations = ((Integer) getInputParameter("maxEvaluations")).intValue();
+        SubjectiveAnalyzeAlgorithm subjectiveAnalyzeAlgorithm = null;
+
+        populationSize = (Integer) getInputParameter("populationSize");
+        maxEvaluations = (Integer) getInputParameter("maxEvaluations");
+        int maxInteractions = (Integer) getInputParameter("maxInteractions");
+        int firstInteraction = (Integer) getInputParameter("firstInteraction");
+        int intervalInteraction = (Integer) getInputParameter("intervalInteraction");
+        Boolean interactive = (Boolean) getInputParameter("interactive");
+        InteractiveFunction interactiveFunction = ((InteractiveFunction) getInputParameter("interactiveFunction"));
+
+        int currentInteraction = 0;
         indicators = (QualityIndicator) getInputParameter("indicators");
-        // Initialize the variables
+        HashSet<Solution> bestOfUserEvaluation = new HashSet<>();
+
         population = new SolutionSet(populationSize);
         evaluations = 0;
+
         requiredEvaluations = 0;
-        // Read the operators
-        mutationOperator = (PLAMutationOperator) operators_.get("mutation");
+
+        mutationOperator = operators_.get("mutation");
         crossoverOperator = operators_.get("crossover");
         selectionOperator = operators_.get("selection");
 
-        try {
+        mutationOperator.isASP = true;
 
-            LOGGER.info("Calculando threashold CO");
+        ArrayList<Integer> originalArchElementCount;
+        originalArchElementCount = new ArrayList<>();
+        ArrayList<Integer> newArchElementCount;
+        newArchElementCount = new ArrayList<>();
+
+        try {
+            Solution solution_base = new Solution(problem_);
+            problem_.evaluateConstraints(solution_base);
+            problem_.evaluate(solution_base);
+            saveBaseHypervolume(solution_base);
+            originalArchElementCount = CountArchElements(solution_base);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new JMException(e.getMessage());
+        }
+        try {
             Solution newSolution1 = new Solution(problem_);
-            mutationOperator.setThreshold(detectThreshold(newSolution1));
-            LOGGER.info("threashold original CO: " + mutationOperator.getThreshold()); //print do threashold
+            ((PLAMutationOperator)mutationOperator).setThreshold(detectThreshold(newSolution1));
+            LOGGER.info("threashold original CO: " + ((PLAMutationOperator)mutationOperator).getThreshold()); //print do threashold
 
 
             LOGGER.info("Calculando threashold Large Class");
-            mutationOperator.setThresholdLc(detectThreshold_lc(newSolution1));
-            LOGGER.info("threashold original large class: " + mutationOperator.getThresholdLc()); //print do threashold
+            ((PLAMutationOperator)mutationOperator).setThresholdLc(detectThreshold_lc(newSolution1));
+            LOGGER.info("threashold original large class: " + ((PLAMutationOperator)mutationOperator).getThresholdLc()); //print do threashold
 
             LOGGER.info("Elegance NAC original: " + Metrics.EleganceNAC.evaluate((Architecture) newSolution1.getDecisionVariables()[0]));
             LOGGER.info("Elegance EX original: " + Metrics.EleganceEX.evaluate((Architecture) newSolution1.getDecisionVariables()[0]));
 
-            LOGGER.info("Criando População");
-            // Create the initial solutionSet
+            saveOriginalThreashold((Architecture)newSolution1.getDecisionVariables()[0]);
+
+
             Solution newSolution;
             for (int i = 0; i < populationSize; i++) {
-                newSolution = new Solution(problem_);
-                // criar a diversidade na populacao inicial
-                mutationOperator.execute(newSolution);
-
-                while (!(isValidSolution((Architecture) newSolution.getDecisionVariables()[0]))) {
-                    newSolution = new Solution(problem_);
-                    // criar a diversidade na populacao inicial
-                    mutationOperator.execute(newSolution);
-                    System.out.println("teste");
-                }
-                problem_.evaluate(newSolution);
-                problem_.evaluateConstraints(newSolution);
+                newSolution = newRandomSolution(mutationOperator);
                 evaluations++;
                 population.add(newSolution);
             }
         } catch (Exception e) {
-            LOGGER.error(e);
+            e.printStackTrace();
             throw new JMException(e.getMessage());
         }
+
         try {
-            LOGGER.info("Iniciando evoluções");
 
             Solution newSolution1 = new Solution(problem_);
-
-            OPLA opla = (OPLA) problem_;
-
             //calculo thrz linkoverload
             LOGGER.info("Calculando threashold LinkOverload");
 
-            ArrayList<Integer> linkOverloadThrz = ((Architecture) newSolution1.getDecisionVariables()[0]).getTHZLinkOverload(); // calcule o threashold
+            ArrayList<Integer> linkOverloadThrz = ((Architecture) newSolution1.getDecisionVariables()[0]).getThreasholdLinkOverload(); // calcule o threashold
             LOGGER.info("threashold Link Overload original: " + linkOverloadThrz); //print do threashold
 
             for (Solution inic : population.getSolutionSet()) {
                 ((Architecture) inic.getDecisionVariables()[0]).linkOverloadExists(linkOverloadThrz);
-                opla.evaluateLinkOverload(inic);
+                ((OPLA) problem_).evaluateLinkOverload(inic);
             }
+            saveBaseThreashold((PLAMutationOperator) mutationOperator, linkOverloadThrz);
 
             while (evaluations < maxEvaluations) {
-                System.out.println("Numero de avaliação Fitness: " + evaluations);
-                // Create the offSpring solutionSet
                 offspringPopulation = new SolutionSet(populationSize);
                 Solution[] parents = new Solution[2];
+
                 for (int i = 0; i < (populationSize / 2); i++) {
                     if (evaluations < maxEvaluations) {
-                        LOGGER.info("Origin INDIVIDUO: " + i + " evolucao: " + evaluations);
-                        parents[0] = (Solution) selectionOperator.execute(population);
-                        parents[1] = (Solution) selectionOperator.execute(population);
-                        Object execute = crossoverOperator.execute(parents);
-                        if (execute instanceof Solution) {
-                            Solution offSpring = (Solution) crossoverOperator.execute(parents);
-                            if (isValidSolution((Architecture) offSpring.getDecisionVariables()[0])) {
-                                problem_.evaluateConstraints(offSpring);
-                                mutationOperator.execute(offSpring);
-                                if (isValidSolution((Architecture) offSpring.getDecisionVariables()[0])) {
+
+                        if(((PLACrossoverOperator) crossoverOperator).getOperators().contains(CrossoverOperators.PLA_COMPLEMENTARY_CROSSOVER.name())) {
+                            parents = selectionComplementary(population);
+                        }
+                        else {
+                            parents[0] = (Solution) selectionOperator.execute(population);
+                            parents[1] = (Solution) selectionOperator.execute(population);
+                        }
+
+                        Solution[] offSpring = (Solution[]) crossoverOperator.execute(parents);
+                        for(Solution child : offSpring){
+
+                            /*
+                            // Original
+                            problem_.evaluateConstraints(child);
+                            mutationOperator.execute(child);
+                            problem_.evaluateConstraints(child);
+                            problem_.evaluate(child);
+
+                            newArchElementCount = CountArchElements(child);
+                            if (IsValidArchElements(originalArchElementCount, newArchElementCount)) {
+                                offspringPopulation.add(child);
+                            }
+                            evaluations += 1;
+                            */
+                            if (isValidSolution((br.otimizes.oplatool.architecture.representation.Architecture) child.getDecisionVariables()[0])) {
+                                problem_.evaluateConstraints(child);
+                                mutationOperator.execute(child);
+                                if (isValidSolution((br.otimizes.oplatool.architecture.representation.Architecture) child.getDecisionVariables()[0])) {
 
                                     // Verificar a quantidade de violações link overload
-                                    ((Architecture) offSpring.getDecisionVariables()[0]).linkOverloadExists(linkOverloadThrz);
+                                    ((br.otimizes.oplatool.architecture.representation.Architecture) child.getDecisionVariables()[0]).linkOverloadExists(linkOverloadThrz);
 
-                                    problem_.evaluateConstraints(offSpring);
+                                    problem_.evaluateConstraints(child);
 
 
                                     // aplicar penalidade no fitness, caso link overload exista
-                                    opla.evaluateLinkOverload(offSpring);
+                                    ((OPLA) problem_).evaluateLinkOverload(child);
 
 
+                                    // descarte do diego (qtd de atributos e metodos)
+                                    newArchElementCount = CountArchElements(child);
+                                    if (IsValidArchElements(originalArchElementCount, newArchElementCount)) {
+                                        offspringPopulation.add(child);
+                                    }else{
+                                        System.out.println("DESCARTADO PELO DIEGO");
+                                        OPLA.contDiscardedSolutions_++;
+                                    }
                                     // problem_.evaluate(offSpring);
-                                    offspringPopulation.add(offSpring);
+                                    //offspringPopulation.add(child);
                                 } else {
                                     System.out.println("DESCARTADO");
                                     OPLA.contDiscardedSolutions_++;
@@ -185,89 +247,33 @@ public class NSGAIIASP extends Algorithm {
                                 System.out.println("DESCARTADO");
                                 OPLA.contDiscardedSolutions_++;
                             }
-                        } else {
-                            Solution[] offSpring = (Solution[]) crossoverOperator.execute(parents);
-                            if (isValidSolution((Architecture) offSpring[0].getDecisionVariables()[0])) {
-                                problem_.evaluateConstraints(offSpring[0]);
-                                mutationOperator.execute(offSpring[0]);
-                                if (isValidSolution((Architecture) offSpring[0].getDecisionVariables()[0])) {
-                                    problem_.evaluateConstraints(offSpring[0]);
 
-                                    // Verificar a quantidade de violações link overload
-                                    ((Architecture) offSpring[0].getDecisionVariables()[0]).linkOverloadExists(linkOverloadThrz);
-                                    opla.evaluateLinkOverload(offSpring[0]);
-                                    //problem_.evaluate(offSpring[0]);
-                                    offspringPopulation.add(offSpring[0]);
-                                } else {
-                                    System.out.println("DESCARTADO");
-                                    OPLA.contDiscardedSolutions_++;
-                                }
-                            } else {
-                                System.out.println("DESCARTADO");
-                                OPLA.contDiscardedSolutions_++;
-                            }
-                            if (isValidSolution((Architecture) offSpring[1].getDecisionVariables()[0])) {
-                                problem_.evaluateConstraints(offSpring[1]);
-                                mutationOperator.execute(offSpring[1]);
-                                if (isValidSolution((Architecture) offSpring[1].getDecisionVariables()[0])) {
-                                    problem_.evaluateConstraints(offSpring[1]);
-                                    // Verificar a quantidade de violações link overload
-                                    ((Architecture) offSpring[1].getDecisionVariables()[0]).linkOverloadExists(linkOverloadThrz);
-                                    opla.evaluateLinkOverload(offSpring[1]);
-                                    ///problem_.evaluate(offSpring[1]);
-                                    offspringPopulation.add(offSpring[1]);
-                                } else {
-                                    System.out.println("DESCARTADO");
-                                    OPLA.contDiscardedSolutions_++;
-                                }
-                            } else {
-                                System.out.println("DESCARTADO");
-                                OPLA.contDiscardedSolutions_++;
-                            }
+                            evaluations += 1;
                         }
-                        evaluations += 2;
                     }
                 }
 
-                System.out.println("DESCARTADOS:" + OPLA.contDiscardedSolutions_);
-                // Create the solutionSet union of solutionSet and offSpring
-                LOGGER.info("Union solutions");
-                union = ((SolutionSet) population).union(offspringPopulation);
-
-                // Ranking the union
-                LOGGER.info("Ranking the union");
+                union = population.union(offspringPopulation);
                 Ranking ranking = new Ranking(union);
-
-                //Thread.sleep(100000);
 
                 int remain = populationSize;
                 int index = 0;
                 SolutionSet front = null;
                 population.clear();
-                // Obtain the next front
-                LOGGER.info("getSubfront()");
                 front = ranking.getSubfront(index);
+
                 while ((remain > 0) && (remain >= front.size())) {
-                    // Assign crowding distance to individuals
-                    LOGGER.info("crowdingDistanceAssignment()");
                     distance.crowdingDistanceAssignment(front, problem_.getNumberOfObjectives());
-                    // Add the individuals of this front
                     for (int k = 0; k < front.size(); k++) {
                         population.add(front.get(k));
                     }
-                    // Decrement remain
                     remain = remain - front.size();
-                    // Obtain the next front
                     index++;
                     if (remain > 0) {
-                        LOGGER.info("getSubfront()");
                         front = ranking.getSubfront(index);
                     }
                 }
-                // Remain is less than front(index).size, insert only the best
-                // one
-                if (remain > 0) { // front contains individuals to insert
-                    LOGGER.info("crowdingDistanceAssignment()");
+                if (remain > 0) {
                     distance.crowdingDistanceAssignment(front, problem_.getNumberOfObjectives());
                     front.sort(new CrowdingComparator());
                     for (int k = 0; k < remain; k++) {
@@ -275,10 +281,39 @@ public class NSGAIIASP extends Algorithm {
                     }
                     remain = 0;
                 }
+                int generation = evaluations / populationSize;
+                OPLAThreadScope.currentGeneration.set(generation);
+                OPLALogs.add(new OptimizationInfo(Thread.currentThread().getId(), "Generation " + generation, OptimizationInfoStatus.RUNNING));
+                for (Solution solution : offspringPopulation.getSolutionSet()) {
+                    solution.setEvaluation(0);
+//                        If you wish block replicated freezed solutions, uncomment this line
+//                        for (Element elementsWithPackage : solution.getAlternativeArchitecture().getElementsWithPackages()) {
+//                            elementsWithPackage.unsetFreeze();
+//                        }
+                }
+                if (interactive && currentInteraction < maxInteractions && ((generation % intervalInteraction == 0 && generation >= firstInteraction) || generation == firstInteraction)) {
+                    offspringPopulation = interactiveFunction.run(offspringPopulation);
+                    if (subjectiveAnalyzeAlgorithm == null) {
+                        subjectiveAnalyzeAlgorithm = new SubjectiveAnalyzeAlgorithm(new OPLASolutionSet(offspringPopulation), ClassifierAlgorithm.CLUSTERING_MLP);
+                        subjectiveAnalyzeAlgorithm.run(null, false);
+                    } else {
+                        subjectiveAnalyzeAlgorithm.run(new OPLASolutionSet(offspringPopulation), false);
+                    }
+                    bestOfUserEvaluation.addAll(offspringPopulation.getSolutionSet().stream().filter(p -> (p.getEvaluation() >= 5 && p.getEvaluatedByUser()) || (p.containsArchitecturalEvaluation() && p.getEvaluatedByUser())).collect(Collectors.toList()));
+                    currentInteraction++;
+                }
 
-                union.clear();
-                ranking.clear();
-                front.clear();
+                if (interactive && currentInteraction < maxInteractions && Math.abs((currentInteraction * intervalInteraction) + (intervalInteraction / 2)) == generation && generation > firstInteraction) {
+                    subjectiveAnalyzeAlgorithm.run(new OPLASolutionSet(offspringPopulation), true);
+                }
+
+                if (interactive && subjectiveAnalyzeAlgorithm != null && !subjectiveAnalyzeAlgorithm.isTrained() && currentInteraction >= maxInteractions) {
+                    subjectiveAnalyzeAlgorithm.setTrained(true);
+                }
+
+                if (interactive && subjectiveAnalyzeAlgorithm != null && subjectiveAnalyzeAlgorithm.isTrained() && currentInteraction >= maxInteractions && ((generation % intervalInteraction == 0 && generation >= firstInteraction) || generation == firstInteraction)) {
+                    subjectiveAnalyzeAlgorithm.evaluateSolutionSetSubjectiveAndArchitecturalMLP(new OPLASolutionSet(offspringPopulation), true);
+                }
 
                 if ((indicators != null) && (requiredEvaluations == 0)) {
                     double HV = indicators.getHypervolume(population);
@@ -289,17 +324,256 @@ public class NSGAIIASP extends Algorithm {
             }
         } catch (Exception e) {
             LOGGER.error(e);
+            e.printStackTrace();
             throw new JMException(e.getMessage());
         }
-        // Return as output parameter the required evaluations
-        LOGGER.info("setOutputParameter()");
+
         setOutputParameter("evaluations", requiredEvaluations);
-        // Return the first non-dominated front
-        LOGGER.info("Ranking()");
+        SolutionSet populationOriginal = new Cloner().shallowClone(population);
         Ranking ranking = new Ranking(population);
-        return ranking.getSubfront(0);
-        // return population;
-    } // execute
+        SolutionSet subfrontToReturn = ranking.getSubfront(0);
+        removeBadSolutions(subfrontToReturn, populationOriginal, interactive);
+
+        subfrontToReturn.setCapacity(subfrontToReturn.getCapacity() + bestOfUserEvaluation.size());
+        for (Solution solution : bestOfUserEvaluation) {
+            if (!subfrontToReturn.getSolutionSet().contains(solution)) {
+                subfrontToReturn.add(solution);
+            }
+        }
+
+        if (interactive && subjectiveAnalyzeAlgorithm != null && subjectiveAnalyzeAlgorithm.isTrained()) {
+            try {
+                subjectiveAnalyzeAlgorithm.evaluateSolutionSetSubjectiveAndArchitecturalMLP(new OPLASolutionSet(subfrontToReturn), false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return subfrontToReturn;
+    }
+
+    private void removeBadSolutions(SolutionSet population, SolutionSet original, Boolean interactive) {
+        if (interactive) {
+            for (int i = 0; i < population.getSolutionSet().size(); i++) {
+                if (population.get(i).getEvaluation() == 1) {
+                    population.remove(i);
+                }
+            }
+        }
+    }
+
+    private Solution newRandomSolution(Operator mutationOperator) throws Exception {
+        Solution newSolution;
+        newSolution = new Solution(problem_);
+        mutationOperator.execute(newSolution);
+        problem_.evaluate(newSolution);
+        problem_.evaluateConstraints(newSolution);
+        return newSolution;
+    }
+
+    private void saveBaseHypervolume(Solution solution) {
+        SaveStringToFile.getInstance().createLogDir();
+        String path = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs" + FileConstants.FILE_SEPARATOR + "fitness_base.txt";
+        try {
+            FileWriter fileWriter = new FileWriter(path);
+            PrintWriter printWriter = new PrintWriter(fileWriter);
+
+            for (Double fit : solution.getObjectives()) {
+                printWriter.write(fit.toString());
+                printWriter.write(" ");
+            }
+            printWriter.close();
+            fileWriter.close();
+        } catch (Exception ex) {
+            System.out.println(ex);
+            ex.printStackTrace();
+        }
+    }
+
+
+    private void saveBaseThreashold(PLAMutationOperator mutationOperator, ArrayList<Integer> linkOverloadThrz) {
+        SaveStringToFile.getInstance().createThreashholdLogDir();
+        String path = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs"  + FileConstants.FILE_SEPARATOR + "threashold" + FileConstants.FILE_SEPARATOR + "0_base_threashold.txt";
+        SaveStringToFile.getInstance().appendStrToFile(path,"CO:");
+        SaveStringToFile.getInstance().appendStrToFile(path,""+((PLAMutationOperator)mutationOperator).getThreshold());
+        SaveStringToFile.getInstance().appendStrToFile(path,"\nLc:");
+        SaveStringToFile.getInstance().appendStrToFile(path,""+((PLAMutationOperator)mutationOperator).getThresholdLc());
+        SaveStringToFile.getInstance().appendStrToFile(path,"\nLO:");
+        SaveStringToFile.getInstance().appendStrToFile(path,""+linkOverloadThrz.toString());
+    }
+
+    private void saveOriginalThreashold(Architecture architecture) {
+        SaveStringToFile.getInstance().createThreashholdLogDir();
+        String pathCO = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs"  + FileConstants.FILE_SEPARATOR + "threashold" + FileConstants.FILE_SEPARATOR + "0_OriginalCO.txt";
+        String pathLC = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs"  + FileConstants.FILE_SEPARATOR + "threashold" + FileConstants.FILE_SEPARATOR + "0_OriginalLC.txt";
+        String pathLO = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs"  + FileConstants.FILE_SEPARATOR + "threashold" + FileConstants.FILE_SEPARATOR + "0_OriginalLO.txt";
+        architecture.saveThreasholdConcernOverload(pathCO);
+        architecture.saveThreshold_lc(pathLC);
+        architecture.saveThreasholdLinkOverload(pathLO);
+    }
+
+    public Solution[] selectionComplementary(SolutionSet pop){
+
+        ArrayList<ArrayList<Solution>> lstFitness = new ArrayList<>();
+
+        int num_obj = pop.get(0).numberOfObjectives();
+        for(int i=0;i<num_obj;i++) {
+            ArrayList<Solution> arrayList = new ArrayList<>();
+            lstFitness.add(arrayList);
+        }
+        for(Solution s : pop.getSolutionSet()){
+            for(int i=0;i<num_obj;i++) {
+                lstFitness.get(i).add(s);
+            }
+        }
+
+        for(int i=0;i<num_obj;i++) {
+            sortFitnessSoluction(lstFitness.get(i),i);
+        }
+
+        Random generator = new Random();
+        Solution[] parent = new Solution[2];
+
+        int lstFitness1Selected = 0;
+        int lstFitness2Selected = 0;
+        if(num_obj==2){
+            lstFitness2Selected = 1;
+        }if(num_obj>2){
+            lstFitness1Selected = generator.nextInt(num_obj);
+            lstFitness2Selected = generator.nextInt(num_obj);
+            while(lstFitness1Selected == lstFitness2Selected){
+                lstFitness1Selected = generator.nextInt(num_obj);
+            }
+        }
+
+        ArrayList<Integer> weightsList = new ArrayList<>();
+        int qtd_solution = pop.getSolutionSet().size();
+        int weight = qtd_solution * 2;
+        weightsList.add(weight);
+
+        for(int i = 1; i< qtd_solution; i++){
+            weight = (qtd_solution - i) + weightsList.get(i - 1);
+            weightsList.add(weight);
+        }
+        int max_weight = weightsList.get(weightsList.size()-1);
+        int pos_fitness1 = 0;
+        int pos_fitness2 = 0;
+
+        if(num_obj == 1){
+            int rnd = generator.nextInt(max_weight) + 1;
+            for(int pos=0;pos<qtd_solution;pos++){
+                if(weightsList.get(pos) >= rnd){
+                    pos_fitness1 = pos;
+                    break;
+                }
+            }
+            rnd = generator.nextInt(max_weight) + 1;
+            for(int pos=0;pos<qtd_solution;pos++){
+                if(weightsList.get(pos) >= rnd){
+                    pos_fitness2 = pos;
+                    break;
+                }
+            }
+            while (pos_fitness1 == pos_fitness2){
+                rnd = generator.nextInt(max_weight) + 1;
+                for(int pos=0;pos<qtd_solution;pos++){
+                    if(weightsList.get(pos) >= rnd){
+                        pos_fitness2 = pos;
+                        break;
+                    }
+                }
+            }
+        }
+        else{
+            int rnd = generator.nextInt(max_weight) + 1;
+            for(int pos=0;pos<qtd_solution;pos++){
+                if(weightsList.get(pos) >= rnd){
+                    pos_fitness1 = pos;
+                    break;
+                }
+            }
+            rnd = generator.nextInt(max_weight) + 1;
+            for(int pos=0;pos<qtd_solution;pos++){
+                if(weightsList.get(pos) >= rnd){
+                    pos_fitness2 = pos;
+                    break;
+                }
+            }
+        }
+
+        parent[0] = lstFitness.get(lstFitness1Selected).get(pos_fitness1);
+        parent[1] = lstFitness.get(lstFitness2Selected).get(pos_fitness2);
+
+        for(int i = 1; i < num_obj; i++){
+            lstFitness.get(i).clear();
+        }
+        lstFitness.clear();
+
+        return parent;
+    }
+
+    public void sortFitnessSoluction(ArrayList<Solution> listFitness, int objective){
+        for (int i = 0; i < listFitness.size() - 1; i++) {
+            for (int j = i+1; j < listFitness.size(); j++) {
+                if (listFitness.get(i).getObjective(objective) > listFitness.get(j).getObjective(objective)) {
+                    Solution aux = listFitness.get(i);
+                    listFitness.set(i,listFitness.get(j));
+                    listFitness.set(j,aux);
+                }
+            }
+        }
+    }
+
+    public ArrayList<Integer> CountArchElements(Solution solution){
+
+        ArrayList<Integer> countArchElements;
+        countArchElements = new ArrayList<>();
+        countArchElements.add(0);
+        countArchElements.add(0);
+        countArchElements.add(0);
+
+        try {
+
+            int tempAtr = 0;
+            int tempMet = 0;
+            int tempOP = 0;
+
+            Architecture arch = ((Architecture) solution.getDecisionVariables()[0]);
+
+            List<Class> allClasses = new ArrayList<>(arch.getAllClasses());
+            for(Class selectedClass: allClasses){
+                tempAtr = tempAtr + selectedClass.getAllAttributes().size();
+                tempMet = tempMet + selectedClass.getAllMethods().size();
+            }
+
+            List<Interface> allInterface = new ArrayList<>(arch.getAllInterfaces());
+            for(Interface selectedInterface: allInterface){
+                tempOP = tempOP + selectedInterface.getOperations().size();
+            }
+
+            countArchElements.set(0,tempAtr);
+            countArchElements.set(1,tempMet);
+            countArchElements.set(2,tempOP);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return  countArchElements;
+    }
+
+    public boolean IsValidArchElements(ArrayList<Integer> lst1, ArrayList<Integer> lst2){
+        if(!(""+lst1.get(0)).equals(""+lst2.get(0))){
+            return  false;
+        }
+        if(!(""+lst1.get(1)).equals(""+lst2.get(1))){
+            return  false;
+        }
+        if(!(""+lst1.get(2)).equals(""+lst2.get(2))){
+            return  false;
+        }
+        return  true;
+    }
+
+
 
     // TODO_MADRIGAR
     public boolean isValidSolution(Architecture solution) {
@@ -307,7 +581,10 @@ public class NSGAIIASP extends Algorithm {
         final List<Interface> allInterfaces = new ArrayList<Interface>(solution.getAllInterfaces());
         if (!allInterfaces.isEmpty()) {
             for (Interface itf : allInterfaces) {
-                if ((itf.getImplementors().isEmpty()) && (itf.getDependents().isEmpty()) && (!itf.getOperations().isEmpty())) {
+                //if ((itf.getImplementors().isEmpty()) && (itf.getDependents().isEmpty()) && (!itf.getOperations().isEmpty())) {
+                //    return false;
+                //}
+                if ((itf.getImplementors().isEmpty()) && (itf.getDependents().isEmpty())) {
                     return false;
                 }
             }
@@ -315,6 +592,8 @@ public class NSGAIIASP extends Algorithm {
         return true; //isValid;
 
     }
+
+
 
     public int detectThreshold(Solution solution) throws JMException {
 

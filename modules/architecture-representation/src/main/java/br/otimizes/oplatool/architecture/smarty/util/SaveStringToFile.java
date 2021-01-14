@@ -48,6 +48,16 @@ public class SaveStringToFile {
     }
 
     /**
+     * this method create a Log directory if not exists
+     */
+    public void createThreashholdLogDir() {
+        createLogDir();
+        String directory = ApplicationFileConfigThreadScope.getDirectoryToExportModels() + FileConstants.FILE_SEPARATOR + "logs" + FileConstants.FILE_SEPARATOR + "threashold";
+        File file = new File(directory);
+        file.mkdir();
+    }
+
+    /**
      * this method create a TEMP directory if not exists
      */
     public void createTempDir() {
